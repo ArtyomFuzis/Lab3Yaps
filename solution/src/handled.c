@@ -1,8 +1,11 @@
-#include "handled.h"
-#include "file.h"
-#include "image.h"
 #include "bmp.h"
+#include "args.h"
+#include "file.h"
+#include "handled.h"
+#include "image.h"
 #include "transform.h"
+#include <stddef.h>
+#include <stdio.h>
 enum handled_status get_data_handled(int argc, char **argv, struct inp_data *data) {
     switch (parse_data(argc, argv, data)) {
         case PARSE_NO_ARGS:
@@ -20,22 +23,23 @@ enum handled_status get_data_handled(int argc, char **argv, struct inp_data *dat
     }
     return HANDLED_FAIL;
 }
-enum handled_status get_datafiles_handled(struct inp_data const * data, struct data_files *files) {
+
+enum handled_status get_datafiles_handled(struct inp_data const *data, struct data_files *files) {
     files->source_image = NULL;
-    files->transformed_image= NULL;
-    if(open_file_read(data->source_img, &files->source_image) == IO_FAIL) {
+    files->transformed_image = NULL;
+    if (open_file_read(data->source_img, &files->source_image) == IO_FAIL) {
         printf("Source file is not accessible or does not exists.\n");
         return HANDLED_FAIL;
     }
-    if(open_file_rewrite(data->transformed_img, &files->transformed_image) == IO_FAIL) {
+    if (open_file_rewrite(data->transformed_img, &files->transformed_image) == IO_FAIL) {
         printf("Unable to create output file.\n");
         return HANDLED_FAIL;
     }
     return HANDLED_OK;
-
 }
-enum handled_status from_bmp_handled(struct data_files const * files, struct image* img) {
-    switch (from_bmp(files->source_image,img)) {
+
+enum handled_status from_bmp_handled(struct data_files const *files, struct image *img) {
+    switch (from_bmp(files->source_image, img)) {
         case READ_INVALID_HEADER:
             printf("Invalid .bmp header in source file.");
             break;
@@ -52,18 +56,20 @@ enum handled_status from_bmp_handled(struct data_files const * files, struct ima
     }
     return HANDLED_FAIL;
 }
-enum handled_status close_datafiles_handled(struct data_files const* files) {
-    printf("files->source_image: %p\n",(void*)files->source_image);
-    if(files->source_image != NULL) {
-        if(close_file(files->source_image)==IO_FAIL)printf("IO Closing Error.");
+
+enum handled_status close_datafiles_handled(struct data_files const *files) {
+    printf("files->source_image: %p\n", (void *) files->source_image);
+    if (files->source_image != NULL) {
+        if (close_file(files->source_image) == IO_FAIL)printf("IO Closing Error.");
     }
-    if(files->transformed_image != NULL) {
-        if(close_file(files->transformed_image)==IO_FAIL)printf("IO Closing Error.");
+    if (files->transformed_image != NULL) {
+        if (close_file(files->transformed_image) == IO_FAIL)printf("IO Closing Error.");
     }
     return HANDLED_OK;
 }
-enum handled_status to_bmp_handled(struct data_files const * files, struct image const* img) {
-    switch (to_bmp(files->transformed_image,img)) {
+
+enum handled_status to_bmp_handled(struct data_files const *files, struct image const *img) {
+    switch (to_bmp(files->transformed_image, img)) {
         case WRITE_ERROR_NO_MEMORY:
             printf("Not enough memory to continue doing the writing operations.");
             break;
@@ -71,12 +77,13 @@ enum handled_status to_bmp_handled(struct data_files const * files, struct image
             return HANDLED_OK;
         case WRITE_ERROR:
             printf("Writing error");
-        break;
+            break;
     }
     return HANDLED_FAIL;
 }
-enum handled_status transform_handled(struct inp_data const * data, struct image* img) {
-    switch (do_transform(data->transformation,img)) {
+
+enum handled_status transform_handled(struct inp_data const *data, struct image *img) {
+    switch (do_transform(data->transformation, img)) {
         case TRANSFORM_NO_MEMORY:
             printf("Not enough memory to continue doing the transformation operations.");
             break;
@@ -88,7 +95,8 @@ enum handled_status transform_handled(struct inp_data const * data, struct image
     }
     return HANDLED_FAIL;
 }
-enum handled_status destroy_img_handled(struct image * img) {
-    if(free_img(img) != IMG_OK)return HANDLED_FAIL;
+
+enum handled_status destroy_img_handled(struct image *img) {
+    if (free_img(img) != IMG_OK)return HANDLED_FAIL;
     return HANDLED_OK;
 }

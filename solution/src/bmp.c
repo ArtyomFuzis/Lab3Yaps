@@ -1,18 +1,20 @@
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
 #include "bmp.h"
 #include "image.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #define bmp_header_const 0x4d42
 #define bmp_header_size_field 40
 #define bmp_header_bit_cnt 24
+
 uint32_t get_line_size(uint32_t biWidth) {
     return biWidth * sizeof(struct pixel) + (4 - (biWidth * sizeof(struct pixel)) % 4) % 4;
 }
 
 enum read_status from_bmp(FILE *in, struct image *img) {
     struct bmp_header header;
-    int res = fread(&header, sizeof(header), 1, in);
+    size_t res = fread(&header, sizeof(header), 1, in);
     if (res < 1)return READ_INVALID_HEADER;
     if (ferror(in)) return READ_INVALID_HEADER;
     img->height = header.biHeight;
@@ -28,7 +30,7 @@ enum read_status from_bmp(FILE *in, struct image *img) {
     for (size_t i = 0; i < img->height; i++) {
         res = fread(cur_line, sizeof(char), lineSize, in);
         if (res < lineSize || ferror(in)) {
-            //
+            free(cur_line);
             return READ_INVALID_SIGNATURE;
         }
         memcpy((char *) img->data + i * img->width * sizeof(struct pixel), cur_line, img->width * sizeof(struct pixel));
@@ -47,6 +49,7 @@ enum read_status from_bmp(FILE *in, struct image *img) {
     printf("bfType: %d\n",header.bfType);
     printf("bfileSize: %d\n",header.bfileSize);
     printf("bOffBits: %d\n",header.bOffBits);*/
+    free(cur_line);
     return READ_OK;
 }
 
@@ -74,7 +77,7 @@ struct bmp_header get_bmp_header(struct image const *img) {
 
 enum write_status to_bmp(FILE *out, struct image const *img) {
     struct bmp_header header = get_bmp_header(img);
-    int res = fwrite(&header, sizeof(header), 1, out);
+    size_t res = fwrite(&header, sizeof(header), 1, out);
     if (res < 1)return WRITE_ERROR;
     if (ferror(out)) return WRITE_ERROR;
     uint32_t lineSize = get_line_size(header.biWidth);
@@ -82,13 +85,15 @@ enum write_status to_bmp(FILE *out, struct image const *img) {
     if (cur_line == NULL) {
         return WRITE_ERROR_NO_MEMORY;
     }
-    for(int i = 0 ; i < lineSize;i++)cur_line[i] = 0;
+    for (int i = 0; i < lineSize; i++)cur_line[i] = 0;
     for (size_t i = 0; i < img->height; i++) {
-        memcpy(cur_line,(char *) img->data + i * img->width * sizeof(struct pixel), img->width * sizeof(struct pixel));
+        memcpy(cur_line, (char *) img->data + i * img->width * sizeof(struct pixel), img->width * sizeof(struct pixel));
         res = fwrite(cur_line, sizeof(char), lineSize, out);
         if (res < lineSize || ferror(out)) {
+            free(cur_line);
             return WRITE_ERROR;
         }
     }
+    free(cur_line);
     return WRITE_OK;
 }
