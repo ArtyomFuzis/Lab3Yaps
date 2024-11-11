@@ -1,7 +1,7 @@
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS
-    src/*.c
-    src/*.h
-    include/*.h
+        src/*.c
+        src/*.h
+        include/*.h
 )
 
 add_executable(image-transform ${sources})

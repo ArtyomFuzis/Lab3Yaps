@@ -2,3 +2,6 @@
 /out
 /obj
 *.html
+/.idea
+/solution/CMakeLists.txt
+
