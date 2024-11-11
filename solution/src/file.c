@@ -1,16 +1,15 @@
 #include "file.h"
 #include <stddef.h>
 #include <stdio.h>
-#include <stdio.h>
 
 enum io_status open_file_read(char const *filename, FILE **file) {
-    fopen_s(file,filename, "rb");
+    *file = fopen(filename, "rb");
     if (*file == NULL)return IO_FAIL;
     return IO_OK;
 }
 
 enum io_status open_file_rewrite(char const *filename, FILE **file) {
-    fopen_s(file,filename, "wb");
+    *file = fopen(filename, "wb");
     if (*file == NULL)return IO_FAIL;
     return IO_OK;
 }
