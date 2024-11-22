@@ -28,7 +28,8 @@ enum read_status {
     READ_INVALID_SIGNATURE,
     READ_INVALID_BITS,
     READ_INVALID_HEADER,
-    READ_NO_MEMORY
+    READ_NO_MEMORY,
+    READ_IO_ERROR
     /* коды других ошибок  */
 };
 

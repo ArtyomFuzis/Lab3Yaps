@@ -1,28 +1,42 @@
-#include "header.h"
 #include "args.h"
-#include "err.h"
 #include "file.h"
 #include "handled.h"
 #include "image.h"
+
 int main(int argc, char **argv) {
- struct inp_data data;
- struct data_files files;
- struct image img;
- if (get_data_handled(argc, argv, &data) == HANDLED_FAIL) {
-  return ERR_PARSE_INPUT;
- };
- /* NO CODE ANYMORE ONLY BAD APPLE*/
- 流れてく 時の中ででも
- 気だるさが ほらグルグル廻って
- 流れてく 時の中ででも
- 気だるさが ほらグルグル廻って
- 私から 離れる心も
- 見えないわ そう知らない
- 自分から 動くこともなく
- 時の隙間に 流され続けて
- 知らないわ 周りのことなど
- 私は私 それだけ
+    struct inp_data data;
+    struct data_files files;
+    struct image img;
+    struct handled_res res = get_data_handled(argc, argv, &data);
+    if (res.status != HANDLED_OK)return res.err_code;
+    res = get_datafiles_handled(&data, &files);
+    if (res.status != HANDLED_OK) {
+        close_datafiles_handled(&files);
+        return res.err_code;
+    }
+    res = from_bmp_handled(&files, &img);
+    if(res.status != HANDLED_OK){
+        close_datafiles_handled(&files);
+        destroy_img_handled(&img);
+        return res.err_code;
+    }
+    res = transform_handled(&data, &img);
+    if (res.status != HANDLED_OK) {
+        close_datafiles_handled(&files);
+        destroy_img_handled(&img);
+        return res.err_code;
+    };
+    res = to_bmp_handled(&files, &img);
+    if (res.status != HANDLED_OK) {
+        close_datafiles_handled(&files);
+        destroy_img_handled(&img);
+        return res.err_code;
+    };
+    close_datafiles_handled(&files);
+    destroy_img_handled(&img);
+    return 0;
 }
+
 /*
                         .+@@@@@@@@@@@@=..
                         .-%@@@@@@@@@@@@*----:...
@@ -61,4 +75,3 @@ int main(int argc, char **argv) {
 ----@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#----------
 ---=@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@=---------
 */
-

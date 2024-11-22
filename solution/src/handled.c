@@ -4,60 +4,62 @@
 #include "handled.h"
 #include "image.h"
 #include "transform.h"
-#include <stddef.h>
 #include <stdio.h>
-enum handled_status get_data_handled(int argc, char **argv, struct inp_data *data) {
+#include <errno.h>
+struct handled_res get_data_handled(int argc, char **argv, struct inp_data *data) {
     switch (parse_data(argc, argv, data)) {
         case PARSE_NO_ARGS:
             printf("Found no argc. Usage: image-transform <source-image> <transformed-image> <tranformation>\n");
-            break;
+            return (struct handled_res) {HANDLED_FAIL, ENOEXEC};
         case PARSE_WRONG_ARGS_LENGTH:
-            printf(
-                "Wrong count of arguments. Usage: image-transform <source-image> <transformed-image> <tranformation>\n");
-            break;
+            printf("Wrong count of arguments. Usage: image-transform <source-image> <transformed-image> <tranformation>\n");
+            return (struct handled_res){HANDLED_FAIL, E2BIG};
         case PARSE_BAD_TRANSFORMATION:
             printf("Unknown transformation. Avaliable transformations: none, cw90, ccw90, fliph, flipv\n");
-            break;
+            return (struct handled_res){HANDLED_FAIL, EINVAL};
         case PARSE_OK:
-            return HANDLED_OK;
+            return (struct handled_res){HANDLED_OK,0};
     }
-    return HANDLED_FAIL;
+    return (struct handled_res){HANDLED_FAIL, ENOEXEC};
 }
 
-enum handled_status get_datafiles_handled(struct inp_data const *data, struct data_files *files) {
+struct handled_res get_datafiles_handled(struct inp_data const *data, struct data_files *files) {
     files->source_image = NULL;
     files->transformed_image = NULL;
     if (open_file_read(data->source_img, &files->source_image) == IO_FAIL) {
         printf("Source file is not accessible or does not exists.\n");
-        return HANDLED_FAIL;
+        return (struct handled_res){HANDLED_FAIL, ENOENT};
     }
     if (open_file_rewrite(data->transformed_img, &files->transformed_image) == IO_FAIL) {
         printf("Unable to create output file.\n");
-        return HANDLED_FAIL;
+        return (struct handled_res){HANDLED_FAIL, EIO};
     }
-    return HANDLED_OK;
+    return (struct handled_res){HANDLED_OK,0};
 }
 
-enum handled_status from_bmp_handled(struct data_files const *files, struct image *img) {
+struct handled_res from_bmp_handled(struct data_files const *files, struct image *img) {
     switch (from_bmp(files->source_image, img)) {
         case READ_INVALID_HEADER:
             printf("Invalid .bmp header in source file.");
-            break;
+            return (struct handled_res){HANDLED_FAIL, ENOEXEC};
         case READ_INVALID_BITS:
-            break;
+            return (struct handled_res){HANDLED_FAIL, ENOEXEC};
         case READ_INVALID_SIGNATURE:
             printf("File signature does not correspondes the header.");
-            break;
+            return (struct handled_res){HANDLED_FAIL, ENOEXEC};
         case READ_OK:
-            return HANDLED_OK;
+            return (struct handled_res){HANDLED_OK,0};
         case READ_NO_MEMORY:
             printf("Not enough memory to load this picture.");
-            break;
+            return (struct handled_res){HANDLED_FAIL, ENOMEM};
+        case READ_IO_ERROR:
+            printf("Unexpected I/O error occured.");
+            return (struct handled_res){HANDLED_FAIL, EIO};
     }
-    return HANDLED_FAIL;
+    return (struct handled_res){HANDLED_FAIL, ENOEXEC};
 }
 
-enum handled_status close_datafiles_handled(struct data_files const *files) {
+struct handled_res close_datafiles_handled(struct data_files const *files) {
     printf("files->source_image: %p\n", (void *) files->source_image);
     if (files->source_image != NULL) {
         if (close_file(files->source_image) == IO_FAIL)printf("IO Closing Error.");
@@ -65,38 +67,38 @@ enum handled_status close_datafiles_handled(struct data_files const *files) {
     if (files->transformed_image != NULL) {
         if (close_file(files->transformed_image) == IO_FAIL)printf("IO Closing Error.");
     }
-    return HANDLED_OK;
+    return (struct handled_res){HANDLED_OK,0};
 }
 
-enum handled_status to_bmp_handled(struct data_files const *files, struct image const *img) {
+struct handled_res to_bmp_handled(struct data_files const *files, struct image const *img) {
     switch (to_bmp(files->transformed_image, img)) {
         case WRITE_ERROR_NO_MEMORY:
             printf("Not enough memory to continue doing the writing operations.");
-            break;
+            return (struct handled_res){HANDLED_FAIL, ENOMEM};
         case WRITE_OK:
-            return HANDLED_OK;
+            return (struct handled_res){HANDLED_OK,0};
         case WRITE_ERROR:
             printf("Writing error");
-            break;
+            return (struct handled_res){HANDLED_FAIL, EIO};
     }
-    return HANDLED_FAIL;
+    return (struct handled_res){HANDLED_FAIL, ENOEXEC};
 }
 
-enum handled_status transform_handled(struct inp_data const *data, struct image *img) {
+struct handled_res transform_handled(struct inp_data const *data, struct image *img) {
     switch (do_transform(data->transformation, img)) {
         case TRANSFORM_NO_MEMORY:
             printf("Not enough memory to continue doing the transformation operations.");
-            break;
+            return (struct handled_res){HANDLED_FAIL, ENOMEM};
         case TRANSFORM_FAIL:
             printf("Unknown transformation fail.");
-            break;
+            return (struct handled_res){HANDLED_FAIL, ENOEXEC};
         case TRANSFORM_OK:
-            return HANDLED_OK;
+            return (struct handled_res){HANDLED_OK,0};
     }
-    return HANDLED_FAIL;
+    return (struct handled_res){HANDLED_FAIL, ENOEXEC};
 }
 
-enum handled_status destroy_img_handled(struct image *img) {
-    if (free_img(img) != IMG_OK)return HANDLED_FAIL;
-    return HANDLED_OK;
+struct handled_res destroy_img_handled(struct image *img) {
+    if (free_img(img) != IMG_OK)return (struct handled_res){HANDLED_FAIL, ENOEXEC};
+    return (struct handled_res){HANDLED_OK,0};
 }

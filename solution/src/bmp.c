@@ -15,8 +15,8 @@ uint32_t get_line_size(uint32_t biWidth) {
 enum read_status from_bmp(FILE *in, struct image *img) {
     struct bmp_header header;
     size_t res = fread(&header, sizeof(header), 1, in);
-    if (res < 1)return READ_INVALID_HEADER;
-    if (ferror(in)) return READ_INVALID_HEADER;
+    if (res < 1)return READ_IO_ERROR;
+    if (ferror(in)) return READ_IO_ERROR;
     img->height = header.biHeight;
     img->width = header.biWidth;
     enum img_status status = init_img(img);
