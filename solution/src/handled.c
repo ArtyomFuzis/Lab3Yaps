@@ -4,8 +4,8 @@
 #include "handled.h"
 #include "image.h"
 #include "transform.h"
-#include <stdio.h>
 #include <errno.h>
+#include <stdio.h>
 struct handled_res get_data_handled(int argc, char **argv, struct inp_data *data) {
     switch (parse_data(argc, argv, data)) {
         case PARSE_NO_ARGS:
